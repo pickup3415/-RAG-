@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>풋살 도우미 챗봇</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.8/static/pretendard.css">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: white;
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            border-right: 1px solid #e9ecef;
+            font-size: 16px;
+        }
+
+        .new-chat-btn {
+            padding: 14px;
+            background-color: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .new-chat-btn:hover {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            position: relative;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 0;
+            width: 100%;
+            max-width: none;
+            background-color: #f8f9fa;
+        }
+
+        .message {
+            padding: 8px 32px;
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            align-items: flex-start;
+        }
+
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+        }
+
+        .user-message {
+            flex-direction: row-reverse;
+        }
+
+        .message-name {
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #666;
+        }
+
+        .user-message .message-name {
+            display: none;
+        }
+
+        .message-bubble {
+            border-radius: 16px;
+            padding: 14px 18px; 
+            font-size: 16px; 
+            line-height: 1.6;
+            position: relative;
+            word-break: break-word;
+        }
+
+        .assistant-message .message-bubble {
+            background-color: white;
+            border: 1px solid #e9ecef;
+            border-top-left-radius: 4px;
+        }
+
+        .user-message .message-bubble {
+            background-color: #FEE500;
+            border-top-right-radius: 4px;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+            flex-shrink: 0;
+            padding: 8px;
+            border: 1px solid #e9ecef;
+            background-image: url('avatar.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .user-message .avatar {
+            display: none;
+        }
+
+        .input-container {
+            padding: 24px 32px;
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-box {
+            border: 1px solid #e9ecef;
+            border-radius: 24px;
+            background-color: white;
+            padding: 18px 80px 18px 24px;
+            color: #333;
+            width: 100%;
+            min-height: 60px;
+            resize: none;
+            outline: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .input-box:focus {
+            border-color: #adb5bd;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .shortcut-hint {
+            position: absolute;
+            right: 76px;
+            bottom: 16px;
+            font-size: 13px;
+            color: #adb5bd;
+            background-color: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            display: none;
+        }
+
+        .input-box:focus + .shortcut-hint {
+            display: block;
+        }
+
+        .shortcut-key {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .key {
+            padding: 2px 4px;
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .send-button {
+            position: absolute;
+            right: 40px;
+            bottom: 36px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: all 0.2s ease;
+            padding: 8px;
+        }
+
+        .send-button:hover {
+            opacity: 1;
+            color: #333;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .modal {
+            background-color: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 320px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .modal-content {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .modal-button {
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-cancel {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #666;
+        }
+
+        .modal-cancel:hover {
+            background-color: #e9ecef;
+        }
+
+        .modal-confirm {
+            background-color: #FEE500;
+            border: 1px solid #FEE500;
+            color: #333;
+        }
+
+        .modal-confirm:hover {
+            background-color: #ffd800;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .message {
+                padding: 8px 20px;
+            }
+            
+            .input-container {
+                padding: 16px 20px;
+            }
+            
+            .send-button {
+                right: 28px;
+            }
+
+            .shortcut-hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="resetModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-title">채팅 초기화</div>
+            <div class="modal-content">
+                모든 채팅 내용이 삭제됩니다. 
+                계속하시겠습니까?
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button modal-cancel" id="cancelReset">취소</button>
+                <button class="modal-button modal-confirm" id="confirmReset">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <aside class="sidebar">
+        <button id="newChatBtn" class="new-chat-btn">
+            <svg class="icon" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 4a1 1 0 0 1 1 1v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5a1 1 0 0 1 1-1z"/>
+            </svg>
+            새로운 채팅
+        </button>
+    </aside>
+
+    <main class="main-content">
+        <div id="chat-container" class="chat-container">
+            <div class="message assistant-message">
+                <div class="avatar"></div>
+                <div class="message-wrapper">
+                    <div class="message-name">풋살 도우미</div>
+                    <div class="message-bubble">
+                        안녕하세요! 풋살에 대해 궁금하신 점을 물어보세요.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form id="message-form" class="input-container">
+            <textarea 
+                id="user-input" 
+                class="input-box" 
+                placeholder="메시지를 입력하세요..." 
+                rows="1"
+                required
+            ></textarea>
+            <div class="shortcut-hint">
+                <span class="shortcut-key">
+                    <span class="key">Ctrl</span>
+                    <span>+</span>
+                    <span class="key">Enter</span>
+                </span>
+                로 전송
+            </div>
+            <button type="submit" class="send-button">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+            </button>
+        </form>
+    </main>
+
+    <script>
+        const chatContainer = document.getElementById("chat-container");
+        const messageForm = document.getElementById("message-form");
+        const userInput = document.getElementById("user-input");
+        const resetModal = document.getElementById("resetModal");
+        const newChatBtn = document.getElementById("newChatBtn");
+        const confirmResetBtn = document.getElementById("confirmReset");
+        const cancelResetBtn = document.getElementById("cancelReset");
+
+        function resetChat() {
+            chatContainer.innerHTML = '';
+            const initialMessage = createMessageBubble("안녕하세요! 풋살에 대해 궁금하신 점을 물어보세요.", "assistant");
+            chatContainer.appendChild(initialMessage);
+            resetModal.style.display = "none";
+        }
+
+        newChatBtn.addEventListener("click", () => {
+            resetModal.style.display = "flex";
+        });
+
+        confirmResetBtn.addEventListener("click", resetChat);
+
+        cancelResetBtn.addEventListener("click", () => {
+            resetModal.style.display = "none";
+        });
+
+        resetModal.addEventListener("click", (e) => {
+            if (e.target === resetModal) {
+                resetModal.style.display = "none";
+            }
+        });
+
+        function createMessageBubble(content, sender = "user") {
+            const message = document.createElement("div");
+            message.classList.add("message", sender === "assistant" ? "assistant-message" : "user-message");
+            
+            if (sender === "assistant") {
+                const avatar = document.createElement("div");
+                avatar.classList.add("avatar");
+                message.appendChild(avatar);
+            }
+            
+            const wrapper = document.createElement("div");
+            wrapper.classList.add("message-wrapper");
+            
+            if (sender === "assistant") {
+                const name = document.createElement("div");
+                name.classList.add("message-name");
+                name.textContent = "풋살 도우미";
+                wrapper.appendChild(name);
+            }
+            
+            const bubble = document.createElement("div");
+            bubble.classList.add("message-bubble");
+            bubble.textContent = content;
+            
+            wrapper.appendChild(bubble);
+            message.appendChild(wrapper);
+            
+            return message;
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function getAssistantResponse(userMessage) {
+            const url = "https://futsal.fly.dev/chat";
+            
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message: userMessage }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+
+            const data = await response.json();
+            return data.reply;
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            chatContainer.appendChild(createMessageBubble(message, "user"));
+            userInput.value = "";
+            userInput.style.height = "auto";
+            scrollToBottom();
+
+            try {
+                const response = await getAssistantResponse(message);
+                chatContainer.appendChild(createMessageBubble(response, "assistant"));
+                scrollToBottom();
+            } catch (error) {
+                console.error("Error fetching assistant response:", error);
+                chatContainer.appendChild(createMessageBubble("오류가 발생했습니다. 콘솔을 확인하세요.", "assistant"));
+                scrollToBottom();
+            }
+        }
+
+        userInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && e.ctrlKey) {
+                e.preventDefault();
+                messageForm.requestSubmit();
+            }
+        });
+
+        messageForm.addEventListener("submit", handleSubmit);
+
+        userInput.addEventListener("input", function() {
+            this.style.height = "auto";
+            this.style.height = (this.scrollHeight) + "px";
+        });
+    </script>
+</body>
+</html>
